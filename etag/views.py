@@ -279,6 +279,7 @@ class fileDataUploadView(APIView):
             local_file = "{0}/{1}".format(user_uploadDirectory,filename)
             self.handle_file_upload(request.FILES[key],local_file)
             result[key]=local_file
+            request.DATA['userid'] = self.request.user.id
             if request.DATA.get("callback",None):
                 req = self.callback_task(request,local_file)
                 try:
