@@ -326,6 +326,7 @@ class fileDataDownloadView(APIView):
             return [lookup.get(name, name) for name in result.field_names]
 
         def flatten_field_data(result):
+            """ yields rows with nested json field data flattened out """
             # FIXME: this incorrectly returns NaN on blank datefields, etc. - should return blank and not NaN
             field_data_names = [name for name in result.field_names if "field_data" in name]
             for row in result:
@@ -336,6 +337,7 @@ class fileDataDownloadView(APIView):
                 yield row
 
         def flatten_field_names(result):
+            """ returns column names with nested json flattened out """
             field_data_names = [name for name in result.field_names if "field_data" in name]
             names = {name for name in result.field_names if "field_data" not in name}  # intialize set with non-fielddata fields
             for row in result:
