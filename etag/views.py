@@ -4,6 +4,9 @@ from rest_framework.authtoken.models import Token
 # Create your views here.
 from rest_framework import viewsets, filters, status
 from rest_framework.renderers import BrowsableAPIRenderer, JSONPRenderer,JSONRenderer,XMLRenderer,YAMLRenderer #, filters
+#from rest_framework.settings import api_settings
+from rest_framework_csv.parsers import CSVParser
+from rest_framework_csv.renderers import CSVRenderer
 from .renderer import eventdropsJSONRenderer
 from rest_framework.parsers import JSONParser,MultiPartParser,FormParser,FileUploadParser
 #from renderer import CustomBrowsableAPIRenderer
@@ -18,6 +21,9 @@ from rest_framework.views import APIView
 import os, requests,json
 #import DjangoModelPermissionsOrAnonReadOnly
 import uuid
+import csv
+from json import loads
+from django.http import HttpResponse
 
 class ReadersViewSet(viewsets.ModelViewSet):
     """
@@ -254,6 +260,102 @@ class UploadLocationViewSet(viewsets.ModelViewSet):
 
     def pre_save(self, obj):
         obj.user_id = self.request.user.id
+
+
+class fileDataDownloadView(APIView):
+    permission_classes = (IsAuthenticated,)
+    renderer_classes = (BrowsableAPIRenderer, JSONRenderer,JSONPRenderer,CSVRenderer,)
+
+    def get(self, request):
+        filetypes = ['tags', 'animals', 'locations']
+        filetype = request.GET.get('filetype', None)
+        userid = self.request.user.id
+        if filetype not in filetypes:
+            return Response({"ERROR": "filetype is not one of {0}".format(filetypes)})
+        if filetype == 'animals':
+            result = Animals.objects.filter(taggedanimal__tag_id__tagowner__user_id=userid).values(
+                'taggedanimal__start_time',
+                'taggedanimal__end_time',
+                'taggedanimal__tag_id',
+                'taggedanimal__field_data',
+                'field_data',
+                'species',
+            )
+        elif filetype == 'locations':
+            result = Locations.objects.filter(readerlocation__reader_id__user_id=userid, ).values(
+                'readerlocation__reader_id',
+                'readerlocation__reader_id__description',
+                'readerlocation__start_timestamp',
+                'readerlocation__end_timestamp',
+                'latitude',
+                'longitude',
+                'name'
+            )
+        elif filetype == 'tags':
+            result = TagReads.objects.filter(user_id=userid).values(
+                'reader_id', 'tag_id', 'tag_read_time'
+            )
+
+        def format_field_names(result, filetype):
+            """ This formats the headers to match what is used for csv uploading """
+            if filetype == 'animals':
+                lookup = {
+                    'taggedanimal__start_time': 'tag_startdate',
+                    'taggedanimal__end_time': 'tag_enddate',
+                    'taggedanimal__tag_id': 'tag_id',
+                    'taggedanimal__field_data': 'tag_field_data',  # This field will get replaced by the flatten_field_data function
+                    'field_data': 'field_data',  # This field will get replaced by the flatten_field_data function
+                    'species': 'animal_species'
+                }
+            if filetype == 'locations':
+                lookup = {
+                    'readerlocation__reader_id': 'uuid',
+                    'readerlocation__reader_id__description': 'name',  # name and description are backwards in the db
+                    'readerlocation__start_timestamp': 'startdate',
+                    'readerlocation__end_timestamp': 'enddate',
+                    'latitude': 'latitude',
+                    'longitude': 'longitude',
+                    'name': 'description'  # name and description are backwards in the db
+                }
+            if filetype == 'tags':
+                lookup = {
+                    'reader_id': 'uuid',
+                    'tag_id': 'tag_id',
+                    'tag_read_time': 'timestamp'
+                }
+            return [lookup.get(name, name) for name in result.field_names]
+
+        def flatten_field_data(result):
+            field_data_names = [name for name in result.field_names if "field_data" in name]
+            for row in result:
+                for field_data_name in field_data_names:
+                    field_data = loads(row[field_data_name])
+                    del row[field_data_name]
+                    row.update(field_data)
+                yield row
+
+        def get_flattended_field_names(result):
+            field_data_names = [name for name in result.field_names if "field_data" in name]
+            names = {name for name in result.field_names if "field_data" not in name}  # intialize set with non-fielddata fields
+            for row in result:
+                for field_data_name in field_data_names:
+                    for field_name in loads(row[field_data_name]).keys():
+                        names.add(field_name)
+            return names
+
+        result.field_names = format_field_names(result, filetype)
+        if request.accepted_renderer.format == 'csv':
+            field_names = get_flattended_field_names(result)
+            result = flatten_field_data(result)
+            response = HttpResponse(content_type='text/csv')
+            response['Content-Disposition'] = 'attachment; filename="{0}_export.csv"'.format(filetype)
+            writer = csv.DictWriter(response, fieldnames=field_names)
+            writer.writeheader()
+            writer.writerows(result)
+
+            return response
+        else:
+            return Response(flatten_field_data(result))
 
 
 class fileDataUploadView(APIView):

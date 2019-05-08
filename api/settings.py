@@ -69,6 +69,7 @@ REST_FRAMEWORK = {
         'rest_framework.renderers.XMLRenderer',
         'rest_framework.renderers.YAMLRenderer',
         #'data_layer.pagination.PaginatedCSVRenderer',
+        'rest_framework_csv.renderers.CSVRenderer'
         #'drf_ujson.renderers.UJSONRenderer',
 
     ),

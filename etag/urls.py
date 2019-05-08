@@ -20,6 +20,7 @@ router.register('animal_hit_reader', AnimalHitReaderViewSet)
 urlpatterns = patterns('',
     url(r'^', include(router.urls)),
     url(r'^file-upload/',fileDataUploadView.as_view(), name='file-upload'),
+    url(r'^file-download/',fileDataDownloadView.as_view(), name='file-download'),
 )
 
 urlpatterns = format_suffix_patterns(urlpatterns, allowed=['api', 'json', 'jsonp', 'xml', 'yaml'])
