@@ -23,6 +23,7 @@ import os, requests,json
 import uuid
 import csv
 from json import loads
+import pandas as pd
 from django.http import HttpResponse
 
 class ReadersViewSet(viewsets.ModelViewSet):
@@ -327,13 +328,12 @@ class fileDataDownloadView(APIView):
 
         def flatten_field_data(result):
             """ yields rows with nested json field data flattened out """
-            # FIXME: this incorrectly returns NaN on blank datefields, etc. - should return blank and not NaN
             field_data_names = [name for name in result.field_names if "field_data" in name]
-            for row in result:
-                for field_data_name in field_data_names:
-                    field_data = loads(row[field_data_name])
-                    del row[field_data_name]
-                    row.update(field_data)
+            df = pd.DataFrame(result)
+            # create dataframes from "field data" fields
+            dfs = [df[field].apply(lambda x: loads(x)).apply(pd.Series) for field in field_data_names]
+            # combine dataframes to flatten results, remove "field data" columns, and replace NaN's with empty string
+            for row in pd.concat(dfs + [df], axis=1).drop(field_data_names, axis=1).fillna("").to_dict(orient="records"):
                 yield row
 
         def flatten_field_names(result):
