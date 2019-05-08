@@ -326,6 +326,7 @@ class fileDataDownloadView(APIView):
             return [lookup.get(name, name) for name in result.field_names]
 
         def flatten_field_data(result):
+            # FIXME: this incorrectly returns NaN on blank datefields, etc. - should return blank and not NaN
             field_data_names = [name for name in result.field_names if "field_data" in name]
             for row in result:
                 for field_data_name in field_data_names:
@@ -334,7 +335,7 @@ class fileDataDownloadView(APIView):
                     row.update(field_data)
                 yield row
 
-        def get_flattended_field_names(result):
+        def get_flattened_field_names(result):
             field_data_names = [name for name in result.field_names if "field_data" in name]
             names = {name for name in result.field_names if "field_data" not in name}  # intialize set with non-fielddata fields
             for row in result:
@@ -345,13 +346,13 @@ class fileDataDownloadView(APIView):
 
         result.field_names = format_field_names(result, filetype)
         if request.accepted_renderer.format == 'csv':
-            field_names = get_flattended_field_names(result)
-            result = flatten_field_data(result)
+            field_names = get_flattened_field_names(result)
+            flattened_result = flatten_field_data(result)
             response = HttpResponse(content_type='text/csv')
             response['Content-Disposition'] = 'attachment; filename="{0}_export.csv"'.format(filetype)
             writer = csv.DictWriter(response, fieldnames=field_names)
             writer.writeheader()
-            writer.writerows(result)
+            writer.writerows(flattened_result)
 
             return response
         else:
