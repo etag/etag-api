@@ -128,15 +128,14 @@ class TaggedAnimalViewSet(viewsets.ModelViewSet):
 	
     def get_queryset(self):
         # FIXME: The following logic is incorrect and prevents proper display of tagged animal records
-        #user = self.request.user
-        #if self.request.user.is_authenticated():
-        #    if not user:
-        #        return []
-        #    private_tags = TagReads.objects.filter(public=False,user_id=user.id).values_list('tag_id').distinct()
-        #    return TaggedAnimal.objects.filter(tag_id__in=private_tags)
-        #public_tags = TagReads.objects.filter(public=True).values_list('tag_id').distinct()
-        #return TaggedAnimal.objects.filter(tag_id__in=public_tags)
-        return TaggedAnimal.objects
+        user = self.request.user
+        if self.request.user.is_authenticated():
+            if not user:
+                return []
+            private_tags = TagOwner.objects.filter(user_id=user.id).values_list('tag_id').distinct()
+            return TaggedAnimal.objects.filter(tag_id__in=private_tags)
+        public_tags = TagReads.objects.filter(public=True).values_list('tag_id').distinct()
+        return TaggedAnimal.objects.filter(tag_id__in=public_tags)
 
 class TagsViewSet(viewsets.ModelViewSet):
     """
