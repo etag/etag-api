@@ -21,6 +21,7 @@ urlpatterns = patterns('',
     url(r'^', include(router.urls)),
     url(r'^file-upload/',fileDataUploadView.as_view(), name='file-upload'),
     url(r'^file-download/',fileDataDownloadView.as_view(), name='file-download'),
+    url(r'^file-template/', templateDownloadView.as_view(), name='file-template'),
 )
 
 urlpatterns = format_suffix_patterns(urlpatterns, allowed=['api', 'json', 'jsonp', 'xml', 'yaml'])

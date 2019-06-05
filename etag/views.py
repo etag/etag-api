@@ -127,14 +127,16 @@ class TaggedAnimalViewSet(viewsets.ModelViewSet):
     ordering_fields = '__all__'
 	
     def get_queryset(self):
-        user = self.request.user
-        if self.request.user.is_authenticated():
-            if not user:
-                return []
-            private_tags = TagReads.objects.filter(public=False,user_id=user.id).values_list('tag_id').distinct()
-            return TaggedAnimal.objects.filter(tag_id__in=private_tags)
-        public_tags = TagReads.objects.filter(public=True).values_list('tag_id').distinct()
-        return TaggedAnimal.objects.filter(tag_id__in=public_tags)
+        # FIXME: The following logic is incorrect and prevents proper display of tagged animal records
+        #user = self.request.user
+        #if self.request.user.is_authenticated():
+        #    if not user:
+        #        return []
+        #    private_tags = TagReads.objects.filter(public=False,user_id=user.id).values_list('tag_id').distinct()
+        #    return TaggedAnimal.objects.filter(tag_id__in=private_tags)
+        #public_tags = TagReads.objects.filter(public=True).values_list('tag_id').distinct()
+        #return TaggedAnimal.objects.filter(tag_id__in=public_tags)
+        return TaggedAnimal.objects
 
 class TagsViewSet(viewsets.ModelViewSet):
     """
@@ -359,6 +361,52 @@ class fileDataDownloadView(APIView):
             return response
         else:
             return Response(flatten_field_data(result))
+
+
+class templateDownloadView(APIView):
+    """ Generates template file for users to use for uploading csv data """
+    permission_classes = (IsAuthenticated,)
+    renderer_classes = (CSVRenderer,)
+
+    def get(self, request):
+        filetypes = ['tags', 'animals', 'locations']
+        filetype = request.GET.get('filetype', None)
+        if filetype not in filetypes:
+            return Response({"ERROR": "filetype is not one of {0}".format(filetypes)})
+        # TODO: Keep updated with fields used in etagq git repo for uploading
+        if filetype == 'animals':
+            fields = [
+                'ANIMAL_IDENTIFYINGMARKERSTARTDATE',
+                'ANIMAL_IDENTIFYINGMARKERENDDATE',
+                'ANIMAL_ORIGINALMARKER',
+                'ANIMAL_CURRENTMARKER',
+                'ANIMAL_SPECIES',
+                'TAG_ID',
+                'TAG_STARTDATE',
+                'TAG_ENDDATE',
+            ]
+        elif filetype == 'locations':
+            fields = [
+                'UUID',
+                'NAME',
+                'STARTDATE',
+                'ENDDATE',
+                'LATITUDE',
+                'LONGITUDE',
+                'DESCRIPTION',
+            ]
+        elif filetype == 'tags':
+            fields = [
+                "UUID",
+                "TAG_ID",
+                "TIMESTAMP",
+            ]
+
+        response = HttpResponse(content_type='text/csv')
+        response['Content-Disposition'] = 'attachment; filename="{0}_template.csv"'.format(filetype)
+        writer = csv.DictWriter(response, fieldnames=fields)
+        writer.writeheader()
+        return response
 
 
 class fileDataUploadView(APIView):
