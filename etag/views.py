@@ -127,7 +127,6 @@ class TaggedAnimalViewSet(viewsets.ModelViewSet):
     ordering_fields = '__all__'
 	
     def get_queryset(self):
-        # FIXME: The following logic is incorrect and prevents proper display of tagged animal records
         user = self.request.user
         if self.request.user.is_authenticated():
             if not user:
