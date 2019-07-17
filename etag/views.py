@@ -24,7 +24,9 @@ import uuid
 import csv
 from json import loads
 import pandas as pd
+from pandas.io.json import read_json, json_normalize
 from django.http import HttpResponse
+from collections import OrderedDict
 
 class ReadersViewSet(viewsets.ModelViewSet):
     """
@@ -326,15 +328,74 @@ class fileDataDownloadView(APIView):
                 }
             return [lookup.get(name, name) for name in result.field_names]
 
-        def flatten_field_data(result):
-            """ yields rows with nested json field data flattened out """
-            field_data_names = [name for name in result.field_names if "field_data" in name]
+
+        def _flatten_single(record, data_fields):
+            """ helper function to flatten a record with single values only """
+            if type(record) != dict:
+                record = loads(record)
+            for field in data_fields:
+                subfield = loads(record[field])
+                for subkey, value in subfield.items():
+                    record[subkey] = value
+                del record[field]
+            return record
+
+
+        def _flatten_multiple(record, index):
+            """ takes a record with nested fields and flattens to a row indicated by index """
+            if type(record) != dict:
+                record = loads(record)
+            else:
+                record = record.copy()  # enforce using a copy of record - this is required since we delete fields
+            for field in record.keys():
+                if "field_data" in field.lower():
+                    subfield = loads(record[field])
+                    data = {key: value[str(index)] if not pd.isna(value[str(index)]) else ""  # remove NaN from output
+                            for key, value in subfield.items()}
+                    record.update(data)
+                    del record[field]
+            return record
+
+
+        def _nested_count(record):
+            """ returns the number of nested records """
+            for field in record.keys():
+                if "field_data" in field.lower():
+                    field_data = loads(record[field])
+                    if type(field_data.values()[0]) == dict:
+                        return len(field_data.values()[0])
+            return 0  # no nested content
+
+
+        def _sort_by_fieldnames(record, order=[]):
+            """ takes a dict and returns an OrderedDict using specified order """
+            sorted_record = OrderedDict()
+            for item in order:
+                sorted_record[item] = record.get(item, None)
+            return sorted_record
+
+
+        def flatten_field_data(result, field_order):
+            """ yields rows with nested json field data flattened out
+                field_order is a list of field_names to ensure that output is in correct order
+            """
             df = pd.DataFrame(result)
-            # create dataframes from "field data" fields
-            dfs = [df[field].apply(lambda x: loads(x)).apply(pd.Series) for field in field_data_names]
-            # combine dataframes to flatten results, remove "field data" columns, and replace NaN's with empty string
-            for row in pd.concat(dfs + [df], axis=1).drop(field_data_names, axis=1).fillna("").to_dict(orient="records"):
-                yield row
+            data_fields = [name for name in df.columns if "field_data" in name.lower()]
+            for record in loads(df.to_json(orient="records")):
+                record_count = 1
+                # determine if record has multiple nested records
+                for key, value in loads(record[data_fields[0]]).items():
+                    if type(value) == dict:
+                        record_count = len(value)
+                        break
+                # No nested records
+                if record_count == 1:
+                    yield _sort_by_fieldnames(_flatten_single(record, data_fields), field_order)
+                # detected multiple nested records
+                elif record_count > 1:
+                    for i in range(_nested_count(record)):
+                        yield _sort_by_fieldnames(_flatten_multiple(record, i), field_order)
+
 
         def flatten_field_names(result):
             """ returns column names with nested json flattened out """
@@ -349,14 +410,23 @@ class fileDataDownloadView(APIView):
         result.field_names = format_field_names(result, filetype)
         if request.accepted_renderer.format == 'csv':
             field_names = flatten_field_names(result)
-            flattened_result = flatten_field_data(result)
+            flattened_result = flatten_field_data(result, field_names)
             response = HttpResponse(content_type='text/csv')
             response['Content-Disposition'] = 'attachment; filename="{0}_export.csv"'.format(filetype)
             writer = csv.DictWriter(response, fieldnames=field_names)
             writer.writeheader()
             writer.writerows(flattened_result)
-
             return response
+        #if request.accepted_renderer.format == 'csv':
+        #    df = pd.DataFrame(result)
+        #    for fieldname in result.field_names:
+        #        df[fieldname] = df[fieldname].apply(lambda x: loads(x)).apply(pd.series)
+        #    response = HttpResponse(content_type='text/csv')
+        #    response['Content-Disposition'] = 'attachment; filename="{0}_export.csv"'.format(filetype)
+        #    writer = csv.DictWriter(response, fieldnames=df.columns.to_list())
+        #    writer.writeheader()
+        #    writer.writerows(df.fillna("").to_dict(orient="records"))
+        #    return response
         else:
             return Response(flatten_field_data(result))
 
