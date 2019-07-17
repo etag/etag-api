@@ -1,30 +1,20 @@
-from django.shortcuts import render
 from rest_framework.authtoken.models import Token
-#from django.shortcuts import render
 # Create your views here.
 from rest_framework import viewsets, filters, status
 from rest_framework.renderers import BrowsableAPIRenderer, JSONPRenderer,JSONRenderer,XMLRenderer,YAMLRenderer #, filters
-#from rest_framework.settings import api_settings
-from rest_framework_csv.parsers import CSVParser
 from rest_framework_csv.renderers import CSVRenderer
-from .renderer import eventdropsJSONRenderer
-from rest_framework.parsers import JSONParser,MultiPartParser,FormParser,FileUploadParser
-#from renderer import CustomBrowsableAPIRenderer
+from rest_framework.parsers import FileUploadParser
 from filters import *
-from etag.models import *
 from serializer import *
-#from serializer import AnimalsSerializer,ReaderSerializer,TaggedAnimalSerializer,ReaderLocationSerializer,TagOwnerSerializer,TagReadsSerializer,TagsSerializer,LocationsSerializer
 from rest_framework import permissions
 from rest_framework.response import Response
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.views import APIView
 import os, requests,json
-#import DjangoModelPermissionsOrAnonReadOnly
 import uuid
 import csv
 from json import loads
 import pandas as pd
-from pandas.io.json import read_json, json_normalize
 from django.http import HttpResponse
 from collections import OrderedDict
 
@@ -382,19 +372,12 @@ class fileDataDownloadView(APIView):
             df = pd.DataFrame(result)
             data_fields = [name for name in df.columns if "field_data" in name.lower()]
             for record in loads(df.to_json(orient="records")):
-                record_count = 1
-                # determine if record has multiple nested records
-                for key, value in loads(record[data_fields[0]]).items():
-                    if type(value) == dict:
-                        record_count = len(value)
-                        break
-                # No nested records
-                if record_count == 1:
+                nested = _nested_count(record)
+                if not nested:
                     yield _sort_by_fieldnames(_flatten_single(record, data_fields), field_order)
-                # detected multiple nested records
-                elif record_count > 1:
-                    for i in range(_nested_count(record)):
-                        yield _sort_by_fieldnames(_flatten_multiple(record, i), field_order)
+                else:  # detected multiple nested records
+                    for index in range(nested):
+                        yield _sort_by_fieldnames(_flatten_multiple(record, index), field_order)
 
 
         def flatten_field_names(result):
@@ -407,6 +390,7 @@ class fileDataDownloadView(APIView):
                         names.add(field_name)
             return names
 
+
         result.field_names = format_field_names(result, filetype)
         if request.accepted_renderer.format == 'csv':
             field_names = flatten_field_names(result)
@@ -417,18 +401,9 @@ class fileDataDownloadView(APIView):
             writer.writeheader()
             writer.writerows(flattened_result)
             return response
-        #if request.accepted_renderer.format == 'csv':
-        #    df = pd.DataFrame(result)
-        #    for fieldname in result.field_names:
-        #        df[fieldname] = df[fieldname].apply(lambda x: loads(x)).apply(pd.series)
-        #    response = HttpResponse(content_type='text/csv')
-        #    response['Content-Disposition'] = 'attachment; filename="{0}_export.csv"'.format(filetype)
-        #    writer = csv.DictWriter(response, fieldnames=df.columns.to_list())
-        #    writer.writeheader()
-        #    writer.writerows(df.fillna("").to_dict(orient="records"))
-        #    return response
         else:
-            return Response(flatten_field_data(result))
+            field_names = flatten_field_names(result)
+            return Response(flatten_field_data(result, field_names))
 
 
 class templateDownloadView(APIView):
