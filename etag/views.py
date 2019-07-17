@@ -371,7 +371,7 @@ class fileDataDownloadView(APIView):
             """
             df = pd.DataFrame(result)
             data_fields = [name for name in df.columns if "field_data" in name.lower()]
-            for record in loads(df.to_json(orient="records")):
+            for record in loads(df.to_json(orient="records", date_format='iso')):
                 nested = _nested_count(record)
                 if not nested:
                     yield _sort_by_fieldnames(_flatten_single(record, data_fields), field_order)
