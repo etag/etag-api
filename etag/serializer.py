@@ -5,8 +5,14 @@ import os, requests
 
 class WritableJSONField(serializers.WritableField):
     def to_native(self, obj):
+        #raise serializers.ValidationError('testing')
         return obj #json.dumps(obj)
+
     def from_native(self,value):
+        try:
+            json.loads(value)
+        except ValueError:
+            raise serializers.ValidationError('Invalid JSON')
 	return value #json.loads(value)
 
 class JSONSerializerField(serializers.Field):
@@ -74,10 +80,11 @@ class TagReadsSerializer(serializers.HyperlinkedModelSerializer):
     tag_id = serializers.SlugRelatedField(slug_field='tag_id')
     tag_url = serializers.HyperlinkedIdentityField(view_name='tags-detail')
     user_id = serializers.Field(source='user_id')
+    accessory_data=WritableJSONField()
 
     class Meta:
         model = TagReads
-        fields = ('url','reader_id','tag_id','tag_read_time','public','user_id')
+        fields = ('url','reader_id','tag_id','tag_read_time','public','user_id','accessory_data')
     #def create(self, validated_data):
      #   return Roosts.objects.using('purple').create(**validated_data)
 

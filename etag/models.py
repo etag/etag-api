@@ -53,6 +53,7 @@ class TagReads(models.Model):
     tag_id = models.ForeignKey('Tags',on_delete=models.CASCADE,db_column='tag_id',)
     user_id = models.IntegerField(blank=False,db_column='user_id')
     tag_read_time = models.DateTimeField()
+    accessory_data = JSONField(blank=True,load_kwargs={'object_pairs_hook': collections.OrderedDict})
     public = models.BooleanField(default=False)
     class Meta:
         managed = False
