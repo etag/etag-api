@@ -70,7 +70,8 @@ class UploadLocationFilter(django_filters.FilterSet):
 
 
 class ReaderLocationFilter(django_filters.FilterSet):
-    reader_id = django_filters.CharFilter(lookup_type='icontains')
+    #reader_id = django_filters.CharFilter(lookup_type='icontains')
+    reader_id = django_filters.CharFilter()
     location_id = django_filters.NumberFilter()
     min_start_timestamp = django_filters.DateTimeFilter(name='start_timestamp', lookup_type='gte')
     max_start_timestamp = django_filters.DateTimeFilter(name='start_timestamp', lookup_type='lte')
