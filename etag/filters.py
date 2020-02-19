@@ -21,7 +21,7 @@ class LocationsFilter(django_filters.FilterSet):
     max_lat = django_filters.NumberFilter(name='latitude',lookup_type='lte')
     min_long = django_filters.NumberFilter(name='longitude',lookup_type='gte')
     max_long = django_filters.NumberFilter(name='longitude',lookup_type='lte')
-    active = django_filters.BooleanFilter()
+    active = django_filters.BooleanFilter(lookup_type='iexact')
     
     class Meta:
         model = Locations
@@ -47,13 +47,13 @@ class TagsFilter(django_filters.FilterSet):
 
 
 class TagReadsFilter(django_filters.FilterSet):
-    reader_id = django_filters.CharFilter(lookup_type='icontains')
+    reader_id = django_filters.CharFilter()
     tag_id = django_filters.CharFilter(lookup_type='icontains')
     tag_reads_id = django_filters.NumberFilter()
     #user = django_filters.NumberFilter()
     min_read_time = django_filters.DateTimeFilter(name='tag_read_time',lookup_type='gte')
     max_read_time = django_filters.DateTimeFilter(name='tag_read_time',lookup_type='lte')
-    public = django_filters.BooleanFilter(lookup_type='exact')
+    public = django_filters.BooleanFilter()
 
     class Meta:
         model = TagReads
@@ -70,7 +70,6 @@ class UploadLocationFilter(django_filters.FilterSet):
 
 
 class ReaderLocationFilter(django_filters.FilterSet):
-    #reader_id = django_filters.CharFilter(lookup_type='icontains')
     reader_id = django_filters.CharFilter()
     location_id = django_filters.NumberFilter()
     min_start_timestamp = django_filters.DateTimeFilter(name='start_timestamp', lookup_type='gte')
