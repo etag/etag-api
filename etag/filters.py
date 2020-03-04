@@ -3,6 +3,7 @@ import django_filters
 
 from models import *
 
+
 class ReadersFilter(django_filters.FilterSet):
     reader_id = django_filters.CharFilter(lookup_type='iexact')
     description = django_filters.CharFilter(lookup_type='iexact')
@@ -25,7 +26,7 @@ class LocationsFilter(django_filters.FilterSet):
     
     class Meta:
         model = Locations
-        fields = ['location_id','name', 'latitude','longitude','active',]
+        fields = ['location_id','name', 'latitude','longitude','active']
 
 
 class AnimalsFilter(django_filters.FilterSet):
@@ -48,7 +49,7 @@ class TagsFilter(django_filters.FilterSet):
 
 class TagReadsFilter(django_filters.FilterSet):
     reader_id = django_filters.CharFilter()
-    tag_id = django_filters.CharFilter(lookup_type='icontains')
+    tag_id = django_filters.CharFilter()
     tag_reads_id = django_filters.NumberFilter()
     #user = django_filters.NumberFilter()
     min_read_time = django_filters.DateTimeFilter(name='tag_read_time',lookup_type='gte')
@@ -84,7 +85,7 @@ class ReaderLocationFilter(django_filters.FilterSet):
 
 class TagOwnerFilter(django_filters.FilterSet):
     user = django_filters.NumberFilter()
-    tag_id = django_filters.CharFilter(lookup_type='iexact')
+    tag_id = django_filters.CharFilter()
     min_start_time = django_filters.DateTimeFilter(name='start_time',lookup_type='gte')
     max_start_time = django_filters.DateTimeFilter(name='start_time',lookup_type='lte')
     min_end_time = django_filters.DateTimeFilter(name='end_time',lookup_type='gte')
@@ -96,9 +97,9 @@ class TagOwnerFilter(django_filters.FilterSet):
 
 
 class AnimalHitReaderFilter(django_filters.FilterSet):
-    reader_id = django_filters.CharFilter(lookup_type='icontains')
+    reader_id = django_filters.CharFilter()
     animal_id = django_filters.NumberFilter()
-    tag_id = django_filters.CharFilter(lookup_type='icontains')
+    tag_id = django_filters.CharFilter()
 
     class Meta:
         model = AnimalHitReader
@@ -106,7 +107,7 @@ class AnimalHitReaderFilter(django_filters.FilterSet):
 
 
 class TaggedAnimalFilter(django_filters.FilterSet):
-    tag_id = django_filters.CharFilter(lookup_type='icontains')
+    tag_id = django_filters.CharFilter()
     animal_id = django_filters.NumberFilter()
     min_start_time = django_filters.DateTimeFilter(name='start_time',lookup_type='gte')
     max_start_time = django_filters.DateTimeFilter(name='start_time',lookup_type='lte')
