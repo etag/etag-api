@@ -112,6 +112,10 @@ MIDDLEWARE_CLASSES = (
 
 )
 
+JWT_AUTH = {
+    'JWT_ALLOW_REFRESH': True,
+}
+
 ROOT_URLCONF = 'api.urls'
 
 WSGI_APPLICATION = 'api.wsgi.application'

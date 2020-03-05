@@ -9,6 +9,7 @@ from rest_framework.authtoken.models import Token
 from rest_framework.permissions import IsAuthenticated
 #from .models import AuthtokenToken, AuthUser
 from django.contrib.auth.decorators import login_required
+from rest_framework_jwt.views import obtain_jwt_token, refresh_jwt_token, verify_jwt_token
 from hashlib import md5
 #from rest_framework import viewsets
 #from rest_framework.permissions import AllowAny
@@ -45,8 +46,13 @@ class APIRoot(APIView):
                          },
             'Catalog': {'Data Source':reverse('catalog-list',request=request)},
 
-            'User Profile': {'User':reverse('user-list',request=request)}
+            'User Profile': {'User':reverse('user-list',request=request)},
 
+            'JSON Web Token': {
+                'Authenticate': reverse('rest_framework_jwt.views.obtain_jwt_token', request=request),
+                'Refresh': reverse('rest_framework_jwt.views.refresh_jwt_token', request=request),
+                'Verify': reverse('rest_framework_jwt.views.verify_jwt_token', request=request),
+            },
         })
 
 class UserSerializer(serializers.Serializer):

@@ -30,6 +30,9 @@ urlpatterns = patterns('',
     url(r'^/\.(?P<format>(api|json|jsonp|xml|yaml))/$', APIRoot.as_view()),
     # User Profile
     url(r'^user/',UserProfile.as_view(),name='user-list'),
+    # Authentication
     url(r'^api-auth/', include('rest_framework.urls', namespace='rest_framework')),
     url(r'^api-token-auth/', 'rest_framework_jwt.views.obtain_jwt_token'),
+    url(r'^api-token-refresh/', 'rest_framework_jwt.views.refresh_jwt_token'),
+    url(r'^api-token-verify/', 'rest_framework_jwt.views.verify_jwt_token'),
 )
