@@ -9,7 +9,6 @@ from rest_framework.authtoken.models import Token
 from rest_framework.permissions import IsAuthenticated
 #from .models import AuthtokenToken, AuthUser
 from django.contrib.auth.decorators import login_required
-from rest_framework_jwt.views import obtain_jwt_token, refresh_jwt_token, verify_jwt_token
 from hashlib import md5
 #from rest_framework import viewsets
 #from rest_framework.permissions import AllowAny
