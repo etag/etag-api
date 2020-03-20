@@ -8,19 +8,10 @@ from rest_framework import serializers, generics
 from rest_framework.authtoken.models import Token
 from rest_framework.permissions import IsAuthenticated
 #from .models import AuthtokenToken, AuthUser
-from django.contrib.auth.decorators import login_required
 from hashlib import md5
 #from rest_framework import viewsets
 #from rest_framework.permissions import AllowAny
 #from .permissions import IsStaffOrTargetUser
-
-#Login required mixin
-class LoginRequiredMixin(object):
-    @classmethod
-    def as_view(cls, **initkwargs):
-        view = super(LoginRequiredMixin, cls).as_view(**initkwargs)
-        return login_required(view)
-
 
 
 class APIRoot(APIView):
@@ -60,7 +51,7 @@ class UserSerializer(serializers.Serializer):
     first_name = serializers.CharField(max_length=50)
     last_name = serializers.CharField(max_length=50)
 
-class UserProfile(LoginRequiredMixin,APIView):
+class UserProfile(APIView):
     permission_classes = ( IsAuthenticated,)
     serializer_class = UserSerializer
     fields = ('username', 'first_name', 'last_name', 'email')
