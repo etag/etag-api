@@ -168,7 +168,7 @@ class UserTasks(APIView):
             page = int(page)
         except:
             page = 1
-        task_name = request.GET.get('taskname', None)
+        task_name = request.GET.get('task_name', None)
         username = self.get_username(request)
         data = self.q.history(username, task_name=task_name, page=page, limit=limit,request=request)
         return Response(data) 
