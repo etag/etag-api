@@ -8,6 +8,7 @@ For the full list of settings and their values, see
 https://docs.djangoproject.com/en/1.6/ref/settings/
 """
 from api import config
+import datetime
 
 try:
     from api.config import (EMAIL_BACKEND, EMAIL_HOST, EMAIL_PORT,
