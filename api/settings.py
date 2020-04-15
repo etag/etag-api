@@ -114,6 +114,8 @@ MIDDLEWARE_CLASSES = (
 
 JWT_AUTH = {
     'JWT_ALLOW_REFRESH': True,
+    # TODO: fix autorefresh in Portal UI and remove following expiration delta
+    'JWT_EXPIRATION_DELTA': datetime.timedelta(hours=12)
 }
 
 ROOT_URLCONF = 'api.urls'
