@@ -8,6 +8,7 @@ For the full list of settings and their values, see
 https://docs.djangoproject.com/en/1.6/ref/settings/
 """
 from api import config
+import datetime
 
 try:
     from api.config import (EMAIL_BACKEND, EMAIL_HOST, EMAIL_PORT,
@@ -114,6 +115,8 @@ MIDDLEWARE_CLASSES = (
 
 JWT_AUTH = {
     'JWT_ALLOW_REFRESH': True,
+    # TODO: fix autorefresh in Portal UI and remove following expiration delta
+    'JWT_EXPIRATION_DELTA': datetime.timedelta(hours=12)
 }
 
 ROOT_URLCONF = 'api.urls'
